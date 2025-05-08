@@ -778,24 +778,41 @@ button:hover { background:#357abd; }
 
   // --- Files ---
   function openFileSelector(){ document.getElementById('fileInput').click() }
-  async function handleFileUpload(files){
-    if(!files.length) return;
-    const f=files[0], fd=new FormData();
-    fd.append('file',f);
-    try{
-      const res=await fetch(`${API_BASE_URL}/upload`,{method:'POST',body:fd});
-      const d=await res.json();
-      if(res.ok){
-        const to=(currentChannel==='all'?'all':currentChannel);
-        ws.send(JSON.stringify({
-          type:'file', fileUrl:d.url, filename:d.filename,
-          fileType:d.type, recipient:to,
-          encrypted:encryptionToggle.checked && to!=='all'
-        }));
-      } else alert(d.error);
-    }catch(err){console.error(err); alert(err.message)}
-    document.getElementById('fileInput').value='';
+  async function handleFileUpload(files) {
+  if (!files.length) return;
+  const f = files[0], fd = new FormData();
+  fd.append('file', f);
+
+  try {
+    // 🔑 use your Render API endpoint, not the static host
+    const res = await fetch(`${API_BASE_URL}/upload`, {
+      method: 'POST',
+      body: fd
+    });
+    const d = await res.json();
+
+    if (res.ok) {
+      const to = currentChannel === 'all' ? 'all' : currentChannel;
+      ws.send(JSON.stringify({
+        type: 'file',
+        fileUrl: d.url,
+        filename: d.filename,
+        fileType: d.type,
+        recipient: to,
+        encrypted: encryptionToggle.checked && to !== 'all'
+      }));
+    } else {
+      alert(d.error);
+    }
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
   }
+
+  // reset the input so the same file can be re‑selected
+  document.getElementById('fileInput').value = '';
+}
+
 
   // --- Profile Modal ---
   function openProfileModal(){
