@@ -1,304 +1,220 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Chat App</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <style>
-        /* --- Reset & Layout --- */
-/* --- Reset & Layout --- */
-/* --- Reset & Layout --- */
-* { margin:0; padding:0; box-sizing:border-box }
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg,#f5f7fa,#c3cfe2);
-    height:100vh; display:flex;
-    align-items:center; justify-content:center;
-    padding:20px;
-}
-.container {
-    background:white; border-radius:12px;
-    box-shadow:0 4px 6px rgba(0,0,0,0.1);
-    width:100%; max-width:900px;
-    display:flex; height:80vh; overflow:hidden;
-}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Secure Chat App</title>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+  />
+  <style>
+    /* --- Reset & Layout --- */
+    * { margin:0; padding:0; box-sizing:border-box }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg,#f5f7fa,#c3cfe2);
+      height:100vh; display:flex;
+      align-items:center; justify-content:center;
+      padding:20px;
+    }
+    .container {
+      background:white; border-radius:12px;
+      box-shadow:0 4px 6px rgba(0,0,0,0.1);
+      width:100%; max-width:900px;
+      display:flex; height:80vh; overflow:hidden;
+    }
 
-/* --- Auth Box & Forms --- */
-.header { background:#4a90e2; color:#fff; padding:20px; text-align:center; }
-.form-container { padding:20px; }
-.input-group { margin-bottom:15px; }
-input, select, textarea {
-    width:100%; padding:12px;
-    border:2px solid #e1e1e1; border-radius:8px;
-    font-size:16px; transition:border-color .3s;
-}
-input:focus, select:focus, textarea:focus { border-color:#4a90e2; }
-button {
-    width:100%; padding:12px;
-    background:#4a90e2; color:#fff;
-    border:none; border-radius:8px;
-    font-size:16px; cursor:pointer;
-    transition:background .3s;
-}
-button:hover { background:#357abd; }
+    /* --- Auth Box & Forms --- */
+    .header { background:#4a90e2; color:#fff; padding:20px; text-align:center; }
+    .form-container { padding:20px; }
+    .input-group { margin-bottom:15px; }
+    input, select, textarea {
+      width:100%; padding:12px;
+      border:2px solid #e1e1e1; border-radius:8px;
+      font-size:16px; transition:border-color .3s;
+    }
+    input:focus, select:focus, textarea:focus { border-color:#4a90e2; }
+    button {
+      width:100%; padding:12px;
+      background:#4a90e2; color:#fff;
+      border:none; border-radius:8px;
+      font-size:16px; cursor:pointer;
+      transition:background .3s;
+    }
+    button:hover { background:#357abd; }
 
-.divider {
-    position:relative; text-align:center;
-    margin:20px 0;
-}
-.divider::before,
-.divider::after {
-    content:''; position:absolute; top:50%;
-    width:45%; height:1px; background:#e1e1e1;
-}
-.divider::before { left:0 }
-.divider::after { right:0 }
+    .divider {
+      position:relative; text-align:center;
+      margin:20px 0;
+    }
+    .divider::before,
+    .divider::after {
+      content:''; position:absolute; top:50%;
+      width:45%; height:1px; background:#e1e1e1;
+    }
+    .divider::before { left:0 }
+    .divider::after { right:0 }
 
-/* --- Sidebar --- */
-.sidebar {
-    width:280px; background:#f0f2f5;
-    border-right:1px solid #ddd;
-    display:flex; flex-direction:column;
-}
-.sidebar-header {
-    background:#4a90e2; color:#fff;
-    padding:15px; text-align:center;
-}
-.user-list { flex:1; overflow-y:auto; }
-.user-item {
-    display:flex; align-items:center;
-    padding:12px 15px; border-bottom:1px solid #ddd;
-    cursor:pointer; transition:background .2s;
-}
-.user-item:hover { background:#e6e6e6 }
-.user-item.active {
-    background:#e3f2fd; border-left:4px solid #4a90e2;
-}
-.user-avatar {
-    width:40px; height:40px;
-    border-radius:50%; background:#ccc;
-    color:#fff; font-weight:bold;
-    display:flex; align-items:center; justify-content:center;
-    margin-right:10px;
-}
-.user-info .user-name { font-weight:bold }
-.user-status { font-size:.8em; color:#666 }
-.user-status.online  { color:#28a745 }
-.user-status.offline { color:#dc3545 }
-
-/* --- Chat Area --- */
-.chat-container { flex:1; display:flex; flex-direction:column }
-.chat-header {
-    background:#4a90e2; color:#fff;
-    padding:15px; display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-#messages {
-    flex:1; padding:15px;
-    background:#f8f9fa; overflow-y:auto;
-}
-.message {
-    margin-bottom:10px; padding:10px;
-    border-radius:8px; max-width:70%;
-    word-wrap:break-word; position:relative;
-}
-.message.own {
-    background:#4a90e2; color:#fff;
-    margin-left:auto; border-bottom-right-radius:0;
-}
-.message.other {
-    background:#e9ecef; margin-right:auto;
-    border-bottom-left-radius:0;
-}
-.message.system {
-    background:#ffd700; text-align:center;
-    margin:10px auto; padding:5px 15px;
-    border-radius:15px; font-size:.9em;
-    width:fit-content;
-}
-.timestamp {
-    font-size:.8em; opacity:.7; margin-top:5px;
-}
-.read-receipt {
-    position:absolute; right:5px; bottom:2px;
-    font-size:.7em; opacity:.7;
-}
-
-/* --- Input & Toolbar --- */
-.chat-input-container {
-    border-top:1px solid #e1e1e1; 
-    padding:10px;  /* REDUCED padding */
-    background:#fff;
-    display: flex;
-    flex-direction: column;
-}
-
-.format-toolbar {
-    display:flex; 
-    gap:3px;  /* REDUCED gap */
-    background:#f1f3f5; 
-    padding:3px;  /* REDUCED padding */
-    border-radius:5px; 
-    margin-bottom:5px; /* REDUCED margin */
-}
-
-.format-button {
-    background:transparent; 
-    border:none;
-    cursor:pointer; 
-    padding:3px 5px;  /* REDUCED padding */
-    border-radius:3px; 
-    display:flex;
-    align-items:center; 
-    justify-content:center;
-    font-size:12px;  /* REDUCED font size */
-    color:#555;
-}
-.format-button:hover { background:#e2e6ea }
-.format-button.active {
-    background:#dae0e5; color:#4a90e2;
-}
-
-/* Modified for bigger text area */
-.chat-input { 
-    display: flex; 
-    gap: 8px;
-    align-items: center;
-    width: 100%;
-}
-
-.chat-input textarea { 
-    flex: 1;
-    resize: none; 
-    min-height: 40px;  /* REDUCED height */
-    height: 40px;      /* REDUCED height */
-    max-height: 80px;  /* REDUCED max height */
-    width: 100%;
-    padding: 8px;      /* REDUCED padding */
-}
-
-/* Modified for smaller buttons */
-.toolbar-button { 
-    flex: none; 
-    width: 28px;      /* FURTHER REDUCED */
-    height: 28px;     /* FURTHER REDUCED */
-    padding: 4px;     /* FURTHER REDUCED */
-    background: #6c757d; 
-    color: #fff;
-    border-radius: 6px; /* REDUCED */
-    border: none;
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-    margin-right: 3px; /* REDUCED */
-}
-
-.chat-input button {
-    width: auto;
-    padding: 6px 12px;  /* FURTHER REDUCED */
-    font-size: 13px;    /* FURTHER REDUCED */
-    height: 36px;       /* ADDED specific height */
-}
-
-/* --- Emoji Picker --- */
-.emoji-picker {
-    position: absolute; 
-    bottom: 70px; 
-    right: 15px;
-    width: 200px;      /* REDUCED - was 300px */
-    height: 200px;     /* REDUCED - was 300px */
-    background: #fff; 
-    border: 1px solid #ddd;
-    border-radius: 8px; 
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    overflow-y: auto; 
-    padding: 10px; 
-    display: none; 
-    z-index: 10;
-}
-.emoji-category { margin-bottom: 10px }
-.emoji-category-name {
-    font-weight: bold; 
-    font-size: 12px;   /* REDUCED - was 14px */
-    margin-bottom: 5px; 
-    color: #666;
-}
-.emoji-grid {
-    display: grid; 
-    grid-template-columns: repeat(6, 1fr); /* REDUCED - was 8 */
-    gap: 5px;
-}
-.emoji-item {
-    cursor: pointer; 
-    font-size: 18px;   /* REDUCED - was 20px */
-    padding: 5px; 
-    border-radius: 5px;
-    text-align: center; 
-    transition: background .1s;
-}
-.emoji-item:hover { background: #f5f5f5 }
-
-/* --- Modal --- */
-.modal {
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    right: 0; 
-    bottom: 0;
-    background: rgba(0,0,0,.5); 
-    display: none;
-    align-items: center; 
-    justify-content: center; 
-    z-index: 100;
-}
-.modal-content {
-    background: #fff; 
-    padding: 20px; 
-    border-radius: 12px;
-    width: 90%; 
-    max-width: 500px;
-}
-.modal-header {
-    display: flex; 
-    justify-content: space-between;
-    align-items: center; 
-    margin-bottom: 20px;
-}
-.close-btn { cursor: pointer; font-size: 24px }
-.encryption-toggle {
-    display: flex; 
-    align-items: center; 
-    margin-top: 15px;
-}
-.encryption-toggle label { margin-left: 10px }
-
-@media(max-width: 768px){
-    .container { flex-direction: column; height: 90vh }
+    /* --- Sidebar --- */
     .sidebar {
-        width: 100%; 
-        height: 60px;
-        flex-direction: row; 
-        overflow-x: auto;
+      width:280px; background:#f0f2f5;
+      border-right:1px solid #ddd;
+      display:flex; flex-direction:column;
     }
-    .sidebar-header { display: none }
-    .user-list { display: flex }
-    .user-item { 
-        border-bottom: none; 
-        border-right: 1px solid #ddd 
+    .sidebar-header {
+      background:#4a90e2; color:#fff;
+      padding:15px; text-align:center;
     }
-    .user-info { display: none }
-    .emoji-picker { 
-        width: 90%; 
-        left: 5%; 
-        right: 5% 
+    .user-list { flex:1; overflow-y:auto; }
+    .user-item {
+      display:flex; align-items:center;
+      padding:12px 15px; border-bottom:1px solid #ddd;
+      cursor:pointer; transition:background .2s;
     }
-}
-        
-    </style>
+    .user-item:hover { background:#e6e6e6 }
+    .user-item.active {
+      background:#e3f2fd; border-left:4px solid #4a90e2;
+    }
+    .user-avatar {
+      width:40px; height:40px;
+      border-radius:50%; background:#ccc;
+      color:#fff; font-weight:bold;
+      display:flex; align-items:center; justify-content:center;
+      margin-right:10px;
+    }
+    .user-info .user-name { font-weight:bold }
+    .user-status { font-size:.8em; color:#666 }
+    .user-status.online  { color:#28a745 }
+    .user-status.offline { color:#dc3545 }
+
+    /* --- Chat Area --- */
+    .chat-container { flex:1; display:flex; flex-direction:column }
+    .chat-header {
+      background:#4a90e2; color:#fff;
+      padding:15px; display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    #messages {
+      flex:1; padding:15px;
+      background:#f8f9fa; overflow-y:auto;
+    }
+    .message {
+      margin-bottom:10px; padding:10px;
+      border-radius:8px; max-width:70%;
+      word-wrap:break-word; position:relative;
+    }
+    .message.own {
+      background:#4a90e2; color:#fff;
+      margin-left:auto; border-bottom-right-radius:0;
+    }
+    .message.other {
+      background:#e9ecef; margin-right:auto;
+      border-bottom-left-radius:0;
+    }
+    .message.system {
+      background:#ffd700; text-align:center;
+      margin:10px auto; padding:5px 15px;
+      border-radius:15px; font-size:.9em;
+      width:fit-content;
+    }
+    .timestamp {
+      font-size:.8em; opacity:.7; margin-top:5px;
+    }
+    .read-receipt {
+      position:absolute; right:5px; bottom:2px;
+      font-size:.7em; opacity:.7;
+    }
+
+    /* --- Input & Toolbar --- */
+    .chat-input-container {
+      border-top:1px solid #e1e1e1; padding:15px;
+      background:#fff;
+    }
+    .format-toolbar {
+      display:flex; gap:5px;
+      background:#f1f3f5; padding:5px;
+      border-radius:5px; margin-bottom:10px;
+    }
+    .format-button {
+      background:transparent; border:none;
+      cursor:pointer; padding:5px 10px;
+      border-radius:3px; display:flex;
+      align-items:center; justify-content:center;
+      font-size:14px; color:#555;
+    }
+    .format-button:hover { background:#e2e6ea }
+    .format-button.active {
+      background:#dae0e5; color:#4a90e2;
+    }
+
+    .chat-input { display:flex; gap:10px; }
+    .chat-input textarea {
+      flex:1; resize:none; min-height:40px; max-height:100px;
+    }
+    .toolbar-button {
+      background:#6c757d; color:#fff;
+      padding:12px; border-radius:8px; border:none;
+      display:flex; align-items:center; justify-content:center;
+    }
+
+    /* --- Emoji Picker --- */
+    .emoji-picker {
+      position:absolute; bottom:70px; right:15px;
+      width:300px; height:300px;
+      background:#fff; border:1px solid #ddd;
+      border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1);
+      overflow-y:auto; padding:10px; display:none; z-index:10;
+    }
+    .emoji-category { margin-bottom:10px }
+    .emoji-category-name {
+      font-weight:bold; font-size:14px; margin-bottom:5px; color:#666;
+    }
+    .emoji-grid {
+      display:grid; grid-template-columns:repeat(8,1fr); gap:5px;
+    }
+    .emoji-item {
+      cursor:pointer; font-size:20px;
+      padding:5px; border-radius:5px;
+      text-align:center; transition:background .1s;
+    }
+    .emoji-item:hover { background:#f5f5f5 }
+
+    /* --- Modal --- */
+    .modal {
+      position:fixed; top:0; left:0; right:0; bottom:0;
+      background:rgba(0,0,0,.5); display:none;
+      align-items:center; justify-content:center; z-index:100;
+    }
+    .modal-content {
+      background:#fff; padding:20px; border-radius:12px;
+      width:90%; max-width:500px;
+    }
+    .modal-header {
+      display:flex; justify-content:space-between;
+      align-items:center; margin-bottom:20px;
+    }
+    .close-btn { cursor:pointer; font-size:24px }
+    .encryption-toggle {
+      display:flex; align-items:center; margin-top:15px;
+    }
+    .encryption-toggle label { margin-left:10px }
+
+    @media(max-width:768px){
+      .container { flex-direction:column; height:90vh }
+      .sidebar {
+        width:100%; height:60px;
+        flex-direction:row; overflow-x:auto;
+      }
+      .sidebar-header { display:none }
+      .user-list { display:flex }
+      .user-item { border-bottom:none; border-right:1px solid #ddd }
+      .user-info { display:none }
+      .emoji-picker { width:90%; left:5%; right:5% }
+    }
+  </style>
 </head>
-<body>
 
 <body>
   <div class="container">
@@ -353,39 +269,29 @@ button:hover { background:#357abd; }
         <div id="messages"></div>
         <div id="typingIndicator" class="typing-indicator" style="display:none"></div>
         <div class="chat-input-container">
-          <!-- Main input row with just textarea and send button -->
-          <div class="main-input-row">
-              <div class="chat-input">
-                  <textarea id="messageInput" placeholder="Type a message..."></textarea>
-                  <button onclick="sendMessage()">Send</button>
-              </div>
+          <div class="format-toolbar">
+            <button class="format-button" data-format="bold"><i class="fas fa-bold"></i></button>
+            <button class="format-button" data-format="italic"><i class="fas fa-italic"></i></button>
+            <button class="format-button" data-format="underline"><i class="fas fa-underline"></i></button>
+            <button class="format-button" data-format="strikethrough"><i class="fas fa-strikethrough"></i></button>
+            <button class="format-button" data-format="code"><i class="fas fa-code"></i></button>
+            <button class="format-button" data-format="link"><i class="fas fa-link"></i></button>
           </div>
-          
-          <!-- Formatting tools moved below -->
-          <div class="format-options-row">
-              <div class="formatting-tools">
-                  <div class="format-toolbar">
-                      <button class="format-button" data-format="bold"><i class="fas fa-bold"></i></button>
-                      <button class="format-button" data-format="italic"><i class="fas fa-italic"></i></button>
-                      <button class="format-button" data-format="underline"><i class="fas fa-underline"></i></button>
-                      <button class="format-button" data-format="strikethrough"><i class="fas fa-strikethrough"></i></button>
-                      <button class="format-button" data-format="code"><i class="fas fa-code"></i></button>
-                      <button class="format-button" data-format="link"><i class="fas fa-link"></i></button>
-                  </div>
-              </div>
-              
-              <div class="attachment-tools">
-                  <button class="toolbar-button" onclick="openFileSelector()"><i class="fas fa-paperclip"></i></button>
-                  <button class="toolbar-button" onclick="toggleEmojiPicker()"><i class="far fa-smile"></i></button>
-                  
-                  <div class="encryption-toggle">
-                      <input type="checkbox" id="encryptionToggle"/>
-                      <label for="encryptionToggle">Encrypt</label>
-                  </div>
-              </div>
+          <div class="chat-input">
+            <button class="toolbar-button" onclick="openFileSelector()"><i class="fas fa-paperclip"></i></button>
+            <button class="toolbar-button" onclick="toggleEmojiPicker()"><i class="far fa-smile"></i></button>
+            <textarea id="messageInput" placeholder="Type a message..."></textarea>
+            <button onclick="sendMessage()">Send</button>
           </div>
+          <div class="encryption-toggle">
+            <input type="checkbox" id="encryptionToggle"/>
+            <label for="encryptionToggle">Enable end-to-end encryption</label>
+          </div>
+        </div>
+        <div id="emojiPicker" class="emoji-picker"></div>
       </div>
-      
+    </div>
+  </div>
 
   <!-- PROFILE MODAL -->
   <div id="profileModal" class="modal">
@@ -428,7 +334,7 @@ button:hover { background:#357abd; }
   }
 
   // --- Globals & DOM Refs ---
-  const API_BASE_URL = 'https://securechat-server-1s4i.onrender.com';
+  const API_BASE_URL = 'https://subedi.ct.ws/api';
   let ws, currentUser, currentChannel='all', typingTimeout, encryptionManager, isTyping=false;
   let publicKeys={}, userProfiles={}, messageReadStatus={};
   let selectedFormat=null;
@@ -500,7 +406,7 @@ button:hover { background:#357abd; }
 
   // --- WebSocket ---
   function connectWebSocket(u,p) {
-    ws = new WebSocket('wss://securechat-server-1s4i.onrender.com');
+    ws=new WebSocket('wss://bristle-stealth-trouble.glitch.me');
     ws.onopen = async () => {
       const pub = await encryptionManager.exportPublicKey();
       ws.send(JSON.stringify({ type:'auth', username:u, password:p, publicKey:pub }));

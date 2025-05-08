@@ -9,6 +9,7 @@
         /* --- Reset & Layout --- */
 /* --- Reset & Layout --- */
 /* --- Reset & Layout --- */
+/* --- Reset & Layout --- */
 * { margin:0; padding:0; box-sizing:border-box }
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -353,27 +354,25 @@ button:hover { background:#357abd; }
         <div id="messages"></div>
         <div id="typingIndicator" class="typing-indicator" style="display:none"></div>
         <div class="chat-input-container">
-          <!-- Main input row with just textarea and send button -->
+          <!-- Main input row with text input and send button -->
           <div class="main-input-row">
-              <div class="chat-input">
-                  <textarea id="messageInput" placeholder="Type a message..."></textarea>
-                  <button onclick="sendMessage()">Send</button>
-              </div>
+              <input type="text" id="messageInput" placeholder="Type a message...">
+              <button onclick="sendMessage()" class="send-button">Send</button>
           </div>
           
-          <!-- Formatting tools moved below -->
-          <div class="format-options-row">
-              <div class="formatting-tools">
-                  <div class="format-toolbar">
-                      <button class="format-button" data-format="bold"><i class="fas fa-bold"></i></button>
-                      <button class="format-button" data-format="italic"><i class="fas fa-italic"></i></button>
-                      <button class="format-button" data-format="underline"><i class="fas fa-underline"></i></button>
-                      <button class="format-button" data-format="strikethrough"><i class="fas fa-strikethrough"></i></button>
-                      <button class="format-button" data-format="code"><i class="fas fa-code"></i></button>
-                      <button class="format-button" data-format="link"><i class="fas fa-link"></i></button>
-                  </div>
+          <!-- Formatting tools and controls in one row -->
+          <div class="controls-row">
+              <!-- Left side: Formatting buttons -->
+              <div class="format-toolbar">
+                  <button class="format-button" data-format="bold"><i class="fas fa-bold"></i></button>
+                  <button class="format-button" data-format="italic"><i class="fas fa-italic"></i></button>
+                  <button class="format-button" data-format="underline"><i class="fas fa-underline"></i></button>
+                  <button class="format-button" data-format="strikethrough"><i class="fas fa-strikethrough"></i></button>
+                  <button class="format-button" data-format="code"><i class="fas fa-code"></i></button>
+                  <button class="format-button" data-format="link"><i class="fas fa-link"></i></button>
               </div>
               
+              <!-- Right side: Attachment tools and encryption -->
               <div class="attachment-tools">
                   <button class="toolbar-button" onclick="openFileSelector()"><i class="fas fa-paperclip"></i></button>
                   <button class="toolbar-button" onclick="toggleEmojiPicker()"><i class="far fa-smile"></i></button>
