@@ -1035,106 +1035,111 @@ button:hover { background:#357abd; }
   // --- Files ---
   function openFileSelector(){ document.getElementById('fileInput').click() }
   
-  async function handleFileUpload(files) {
-    if (!files || !files.length) return;
+  // Replace your handleFileUpload function with this version
+// Replace your handleFileUpload function with this version
+async function handleFileUpload(files) {
+  if (!files || !files.length) return;
+  
+  const file = files[0];
+  console.log("Starting file upload for:", file.name);
+  
+  // Create a visual indicator for the upload
+  const uploadIndicator = document.createElement('div');
+  uploadIndicator.className = 'message system';
+  uploadIndicator.textContent = `Uploading ${file.name}...`;
+  messagesContainer.appendChild(uploadIndicator);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  
+  // Create FormData
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  try {
+    console.log("Sending upload request to:", `${API_BASE_URL}/upload`);
     
-    const file = files[0];
+    // Make the request
+    const response = await fetch(`${API_BASE_URL}/upload`, {
+      method: 'POST',
+      body: formData,
+      // DO NOT set Content-Type header when using FormData
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
     
-    // Basic validation
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-    if (file.size > MAX_FILE_SIZE) {
-      alert(`File too large. Maximum size is 5MB.`);
-      document.getElementById('fileInput').value = '';
-      return;
-    }
+    // Log response details
+    console.log("Response status:", response.status);
+    console.log("Response headers:", 
+      Array.from(response.headers.entries())
+        .map(([k,v]) => `${k}: ${v}`)
+        .join(', ')
+    );
     
-    // Create a visual indicator for the upload
-    const uploadIndicator = document.createElement('div');
-    uploadIndicator.className = 'message system';
-    uploadIndicator.textContent = `Uploading ${file.name}...`;
-    messagesContainer.appendChild(uploadIndicator);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    // Get response text
+    const responseText = await response.text();
+    console.log("Response text (first 100 chars):", responseText.substring(0, 100));
     
-    // Create FormData
-    const formData = new FormData();
-    formData.append('file', file);
-    
+    // Parse as JSON
+    let data;
     try {
-      // Log request details for debugging
-      console.log("Sending file upload request to:", `${API_BASE_URL}/upload`);
-      console.log("File details:", {
-        name: file.name,
-        type: file.type,
-        size: file.size
-      });
-      
-      // Make the request with explicit headers and timeout
-      const res = await fetch(`${API_BASE_URL}/upload`, {
-        method: 'POST',
-        body: formData,
-        // Don't set Content-Type header - browser will set it with boundary
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-      
-      // Get response content type for debugging
-      const contentType = res.headers.get('content-type');
-      console.log("Response content type:", contentType);
-      
-      // Check if the response is not JSON
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await res.text();
-        console.error("Non-JSON response:", text.substring(0, 500)); // Log first 500 chars
-        throw new Error("Server returned non-JSON response");
-      }
-      
-      // Parse JSON
-      const data = await res.json();
-      
-      // Check for success
-      if (!res.ok) {
-        throw new Error(data.error || `Upload failed with status ${res.status}`);
-      }
-      
-      // Update progress indicator
-      uploadIndicator.textContent = `File uploaded successfully!`;
-      uploadIndicator.style.color = '#28a745'; // green
-      
-      // Send file message to WebSocket
-      const recipient = (currentChannel === 'all') ? 'all' : currentChannel;
-      ws.send(JSON.stringify({
-        type: 'file',
-        fileUrl: data.url,
-        filename: file.name, // Use original filename for display
-        fileType: file.type,
-        recipient: recipient,
-        encrypted: encryptionToggle.checked && recipient !== 'all',
-        messageId: Date.now().toString()
-      }));
-      
-      // Remove indicator after 2 seconds
-      setTimeout(() => {
-        uploadIndicator.remove();
-      }, 2000);
-      
-    } catch (err) {
-      console.error('File upload error:', err);
-      
-      // Show error message
-      uploadIndicator.textContent = `Upload failed: ${err.message}`;
-      uploadIndicator.style.color = '#dc3545'; // red
-      
-      // Remove indicator after 5 seconds
-      setTimeout(() => {
-        uploadIndicator.remove();
-      }, 5000);
+      data = JSON.parse(responseText);
+      console.log("Parsed data:", data);
+    } catch (parseErr) {
+      console.error("Failed to parse response as JSON:", parseErr);
+      throw new Error("Server returned invalid JSON");
     }
     
-    // Reset the input regardless of outcome
-    document.getElementById('fileInput').value = '';
+    // Check for error in the response
+    if (data && data.error) {
+      throw new Error(data.error);
+    }
+    
+    // Check for missing URL
+    if (!data || !data.url) {
+      throw new Error("No file URL in response");
+    }
+    
+    // Update success message
+    uploadIndicator.textContent = `File uploaded successfully!`;
+    uploadIndicator.style.color = '#28a745';
+    
+    // Send message via WebSocket
+    const recipient = (currentChannel === 'all') ? 'all' : currentChannel;
+    
+    const fileMessage = {
+      type: 'file',
+      fileUrl: data.url,
+      filename: data.filename || file.name,
+      fileType: data.type || file.type,
+      recipient: recipient,
+      encrypted: encryptionToggle.checked && recipient !== 'all',
+      messageId: Date.now().toString()
+    };
+    
+    console.log("Sending file message via WebSocket:", fileMessage);
+    ws.send(JSON.stringify(fileMessage));
+    
+    // Remove indicator after success
+    setTimeout(() => {
+      uploadIndicator.remove();
+    }, 2000);
+    
+  } catch (err) {
+    console.error('File upload error:', err);
+    
+    // Update error message
+    uploadIndicator.textContent = `Upload failed: ${err.message}`;
+    uploadIndicator.style.color = '#dc3545';
+    
+    // Keep error message longer
+    setTimeout(() => {
+      uploadIndicator.remove();
+    }, 5000);
   }
-
+  
+  // Always reset the file input
+  document.getElementById('fileInput').value = '';
+}
   // --- Profile Modal ---
   function openProfileModal(){
     const p=userProfiles[currentUser]||{};
@@ -1146,7 +1151,8 @@ button:hover { background:#357abd; }
   async function updateProfile(){
     const d=document.getElementById('displayName').value;
     const s=document.getElementById('statusSelect').value;
-    if(!d) return alert("Name can't be empty");
+    if (!d) return alert("Name can't be empty");
+
     try{
       const res=await fetch(`${API_BASE_URL}/update-profile`,{
         method:'POST',

@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Chat App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        /* --- Reset & Layout --- */
+        * { margin:0; padding:0; box-sizing:border-box }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg,#f5f7fa,#c3cfe2);
+            height:100vh; display:flex;
+            align-items:center; justify-content:center;
+            padding:20px;
+        }
+        .container {
+            background:white; border-radius:12px;
+            box-shadow:0 4px 6px rgba(0,0,0,0.1);
+            width:100%; max-width:900px;
+            display:flex; 
+            height:600px; /* FIXED HEIGHT */
+            overflow:hidden;
+        }
+
+        /* --- Auth Box & Forms --- */
+        .header { background:#4a90e2; color:#fff; padding:20px; text-align:center; }
+        .form-container { padding:10px; }
+        .input-group { margin-bottom:10px; }
+        input, select, textarea {
+            width:100%; padding:12px;
+            border:2px solid #e1e1e1; border-radius:8px;
+            font-size:16px; transition:border-color .3s;
+        }
+        input:focus, select:focus, textarea:focus { border-color:#4a90e2; }
+        button {
+            width:100%; padding:12px;
+            background:#4a90e2; color:#fff;
+            border:none; border-radius:8px;
+            font-size:16px; cursor:pointer;
+            transition:background .3s;
+        }
+        button:hover { background:#357abd; }
+
+        .divider {
+            position:relative; text-align:center;
+            margin:20px 0;
+        }
+        .divider::before,
+        .divider::after {
+            content:''; position:absolute; top:50%;
+            width:45%; height:1px; background:#e1e1e1;
+        }
+        .divider::before { left:0 }
+        .divider::after { right:0 }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width:280px; background:#f0f2f5;
+            border-right:1px solid #ddd;
+            display:flex; flex-direction:column;
+            height:100%; /* Ensure full height */
+        }
+        .sidebar-header {
+            background:#4a90e2; color:#fff;
+            padding:15px; text-align:center;
+        }
+        .user-list { 
+            flex:1; 
+            overflow-y:auto; 
+        }
+        .user-item {
+            display:flex; align-items:center;
+            padding:12px 15px; border-bottom:1px solid #ddd;
+            cursor:pointer; transition:background .2s;
+        }
+        .user-item:hover { background:#e6e6e6 }
+        .user-item.active {
+            background:#e3f2fd; border-left:4px solid #4a90e2;
+        }
+        .user-avatar {
+            width:40px; height:40px;
+            border-radius:50%; background:#ccc;
+            color:#fff; font-weight:bold;
+            display:flex; align-items:center; justify-content:center;
+            margin-right:10px;
+        }
+        .user-info .user-name { font-weight:bold }
+        .user-status { font-size:.8em; color:#666 }
+        .user-status.online  { color:#28a745 }
+        .user-status.offline { color:#dc3545 }
+
+        /* --- Chat Area --- */
+        .chat-container { 
+            flex:1; 
+            display:flex; 
+            flex-direction:column;
+            height:100%; /* Ensure full height */
+        }
+        .chat-header {
+            background:#4a90e2; color:#fff;
+            padding:15px; display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
+        #messages {
+            flex:1; 
+            padding:15px;
+            background:#f8f9fa; 
+            overflow-y:auto;
+            height:calc(100% - 130px); /* FIXED HEIGHT: subtract header and input area height */
+        }
+        .message {
+            margin-bottom:10px; padding:10px;
+            border-radius:8px; max-width:70%;
+            word-wrap:break-word; position:relative;
+        }
+        .message.own {
+            background:#4a90e2; color:#fff;
+            margin-left:auto; border-bottom-right-radius:0;
+        }
+        .message.other {
+            background:#e9ecef; margin-right:auto;
+            border-bottom-left-radius:0;
+        }
+        .message.system {
+            background:#ffd700; text-align:center;
+            margin:10px auto; padding:5px 15px;
+            border-radius:15px; font-size:.9em;
+            width:fit-content;
+        }
+        .timestamp {
+            font-size:.8em; opacity:.7; margin-top:5px;
+        }
+        .read-receipt {
+            position:absolute; right:5px; bottom:2px;
+            font-size:.7em; opacity:.7;
+        }
+
+        /* --- Input & Toolbar --- */
+        .chat-input-container {
+            border-top:1px solid #e1e1e1; 
+            padding:10px;
+            background:#fff;
+            display: flex;
+            flex-direction: column;
+            min-height:100px; /* FIXED HEIGHT for input area */
+            max-height:100px; /* Keep it fixed */
+        }
+
+        .format-toolbar {
+            display:flex; 
+            gap:3px;
+            background:#f1f3f5; 
+            padding:3px;
+            border-radius:5px; 
+            margin-bottom:5px;
+        }
+
+        .format-button {
+            background:transparent; 
+            border:none;
+            cursor:pointer; 
+            padding:3px 5px;
+            border-radius:3px; 
+            display:flex;
+            align-items:center; 
+            justify-content:center;
+            font-size:12px;
+            color:#555;
+        }
+        .format-button:hover { background:#e2e6ea }
+        .format-button.active {
+            background:#dae0e5; color:#4a90e2;
+        }
+
+        /* Modified for better text area */
+        .chat-input { 
+            display: flex; 
+            gap: 8px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .chat-input textarea { 
+            flex: 1;
+            resize: none; 
+            min-height: 50px;
+            height: 50px;
+            max-height: 50px;
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        /* Modified for smaller buttons */
+        .toolbar-button {
+            flex: none;
+            width: 40px;
+            height: 40px;
+            padding: 8px;
+            background: #6c757d;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-input button { /* send button */
+            padding: 8px 12px;
+            font-size: 14px;
+            width: auto;
+            max-width: 100px;
+        }
+
+        /* --- Emoji Picker --- */
+        .emoji-picker {
+            position: absolute; 
+            bottom: 70px; 
+            right: 15px;
+            width: 200px;
+            height: 200px;
+            background: #fff; 
+            border: 1px solid #ddd;
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow-y: auto; 
+            padding: 10px; 
+            display: none; 
+            z-index: 10;
+        }
+        .emoji-category { margin-bottom: 10px }
+        .emoji-category-name {
+            font-weight: bold; 
+            font-size: 12px;
+            margin-bottom: 5px; 
+            color: #666;
+        }
+        .emoji-grid {
+            display: grid; 
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+        }
+        .emoji-item {
+            cursor: pointer; 
+            font-size: 18px;
+            padding: 5px; 
+            border-radius: 5px;
+            text-align: center; 
+            transition: background .1s;
+        }
+        .emoji-item:hover { background: #f5f5f5 }
+
+        /* --- Modal --- */
+        .modal {
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0;
+            background: rgba(0,0,0,.5); 
+            display: none;
+            align-items: center; 
+            justify-content: center; 
+            z-index: 100;
+        }
+        .modal-content {
+            background: #fff; 
+            padding: 20px; 
+            border-radius: 12px;
+            width: 90%; 
+            max-width: 500px;
+        }
+        .modal-header {
+            display: flex; 
+            justify-content: space-between;
+            align-items: center; 
+            margin-bottom: 20px;
+        }
+        .close-btn { cursor: pointer; font-size: 24px }
+        .encryption-toggle {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+        }
+        .encryption-toggle label {
+            margin: 0 0 0 8px;
+        }
+
+        /* Auth box needs fixed height too */
+        #authBox {
+            height: 600px; /* Same as container */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        /* File Message Styling */
+        .file-message {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .file-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4a90e2;
+            margin-right: 10px;
+        }
+
+        .message.own .file-icon {
+            color: white;
+        }
+
+        .file-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: inherit;
+            text-decoration: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 180px;
+        }
+
+        .file-preview {
+            margin-top: 5px;
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .file-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+        }
+
+        /* Upload Status */
+        .upload-status {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin: 5px auto;
+            text-align: center;
+            font-size: 0.9em;
+            max-width: 80%;
+        }
+
+        .upload-status.success {
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+        }
+
+        .upload-status.error {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+
+        /* Connection Status */
+        .connection-status {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .connection-status.connected {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+
+        .connection-status.connecting {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+            border: 1px solid #ffc107;
+        }
+
+        .connection-status.disconnected {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-indicator.connected {
+            background-color: #28a745;
+        }
+
+        .status-indicator.connecting {
+            background-color: #ffc107;
+        }
+
+        .status-indicator.disconnected {
+            background-color: #dc3545;
+        }
+
+        /* Offline Mode Banner */
+        .offline-banner {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #856404;
+            padding: 8px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .offline-banner.visible {
+            display: flex;
+        }
+
+        .queued-message-badge {
+            background-color: #ffc107;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            margin-left: 5px;
+        }
+
+        @media(max-width: 768px){
+            .container { 
+                height: 90vh; /* Mobile: use viewport height */
+                flex-direction: column; 
+            }
+            .sidebar {
+                width: 100%; 
+                height: 60px;
+                flex-direction: row; 
+                overflow-x: auto;
+            }
+            .sidebar-header { display: none }
+            .user-list { display: flex }
+            .user-item { 
+                border-bottom: none; 
+                border-right: 1px solid #ddd 
+            }
+            .user-info { display: none }
+            .emoji-picker { 
+                width: 90%; 
+                left: 5%; 
+                right: 5% 
+            }
+            #messages {
+                height: calc(100% - 180px); /* Adjust for mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- AUTH BOX -->
+    <div id="authBox" style="width:100%;">
+      <div class="header"><h1>Secure Chat</h1></div>
+      <div class="form-container">
+        <!-- REGISTER -->
+        <div id="registerForm">
+          <h3>Register</h3>
+          <div class="input-group"><input id="regUsername" placeholder="Username"/></div>
+          <div class="input-group"><input id="regPassword" type="password" placeholder="Password"/></div>
+          <div class="input-group"><input id="regConfirmPassword" type="password" placeholder="Confirm Password"/></div>
+          <div class="input-group"><input id="regDisplayName" placeholder="Display Name (optional)"/></div>
+          <button onclick="register()">Register</button>
+        </div>
+        <div class="divider">OR</div>
+        <!-- LOGIN -->
+        <div id="loginForm">
+          <h3>Login</h3>
+          <div class="input-group"><input id="username" type="text" placeholder="Username"/></div>
+          <div class="input-group"><input id="password" type="password" placeholder="Password"/></div>
+          <button onclick="login()">Login</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN INTERFACE -->
+    <div id="mainInterface" style="display:none; width:100%; height:100%;">
+      <!-- SIDEBAR -->
+      <div class="sidebar">
+        <div class="sidebar-header"><h3>Contacts</h3></div>
+        <div id="userList" class="user-list">
+          <div class="user-item active" data-username="all">
+            <div class="user-avatar">All</div>
+            <div class="user-info">
+              <div class="user-name">Everyone</div>
+              <div class="user-status">Public Channel</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAT AREA -->
+      <div class="chat-container">
+        <div class="chat-header">
+          <h2 id="currentChannel">Public Channel</h2>
+          <div class="profile-icon" onclick="openProfileModal()">
+            <i class="fas fa-user-circle"></i>
+          </div>
+        </div>
+        
+        <!-- Offline Banner -->
+        <div id="offlineBanner" class="offline-banner">
+          <i class="fas fa-wifi-slash"></i>
+          <span>Offline Mode - Messages will be queued</span>
+          <span id="queuedCount" class="queued-message-badge">0</span>
+        </div>
+        
+        <div id="messages"></div>
+        <div id="typingIndicator" class="typing-indicator" style="display:none"></div>
+        <div class="chat-input-container">
+          <div class="format-toolbar">
+            <button class="format-button" data-format="bold"><i class="fas fa-bold"></i></button>
+            <button class="format-button" data-format="italic"><i class="fas fa-italic"></i></button>
+            <button class="format-button" data-format="underline"><i class="fas fa-underline"></i></button>
+            <button class="format-button" data-format="strikethrough"><i class="fas fa-strikethrough"></i></button>
+            <button class="format-button" data-format="code"><i class="fas fa-code"></i></button>
+            <button class="format-button" data-format="link"><i class="fas fa-link"></i></button>
+          </div>
+          
+          <div class="chat-input">
+            <button class="toolbar-button" onclick="openFileSelector()">
+              <i class="fas fa-paperclip"></i>
+            </button>
+            <button class="toolbar-button" onclick="toggleEmojiPicker()">
+              <i class="far fa-smile"></i>
+            </button>
+            <textarea id="messageInput" placeholder="Type a message…"></textarea>
+            <button onclick="sendMessage()" style="flex: 0 0 auto;">Send</button>
+            <div class="encryption-toggle" style="flex: 0 0 auto;">
+              <input type="checkbox" id="encryptionToggle" checked/>
+              <label for="encryptionToggle">E2E</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+<!-- PROFILE MODAL -->
+<div id="profileModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Your Profile</h3>
+      <span class="close-btn" onclick="closeProfileModal()">×</span>
+    </div>
+    <div class="input-group">
+      <input id="displayName" placeholder="Display Name"/>
+    </div>
+    <div class="input-group">
+      <select id="statusSelect">
+        <option value="online">Online</option>
+        <option value="away">Away</option>
+        <option value="busy">Busy</option>
+        <option value="offline">Appear Offline</option>
+      </select>
+    </div>
+    <button onclick="updateProfile()">Update Profile</button>
+  </div>
+</div>
+
+<!-- HIDDEN FILE INPUT -->
+<input id="fileInput" type="file" style="display:none" onchange="handleFileUpload(this.files)"/>
+
+<!-- EMOJI PICKER -->
+<div id="emojiPicker" class="emoji-picker"></div>
+
+<!-- CONNECTION STATUS -->
+<div id="connectionStatus" class="connection-status disconnected">
+  <div class="status-indicator disconnected"></div>
+  <span>Disconnected</span>
+</div>
+
+<!-- External Encryption Utilities -->
+<script src="encryption-utils.js"></script>
+
+<script>
+  // --- Global Configuration ---
+  const API_BASE_URL = 'http://localhost:3001';
+  window.API_BASE_URL = API_BASE_URL; // Expose to encryption-utils.js
+  
+  // --- Global Variables ---
+  let currentUser, currentChannel='all', typingTimeout, isTyping=false;
+  let publicKeys={}, userProfiles={}, messageReadStatus={};
+  let selectedFormat=null;
+  let csrfToken = null; // For CSRF protection
+  
+  // Message queue for offline mode
+  const messageQueue = [];
+  
+  // --- DOM References ---
+  const messagesContainer  = document.getElementById('messages');
+  const messageInput       = document.getElementById('messageInput');
+  const typingIndicator    = document.getElementById('typingIndicator');
+  const userListElement    = document.getElementById('userList');
+  const currentChannelElem = document.getElementById('currentChannel');
+  const encryptionToggle   = document.getElementById('encryptionToggle');
+  const profileModal       = document.getElementById('profileModal');
+  const emojiPicker        = document.getElementById('emojiPicker');
+  const connectionStatusEl = document.getElementById('connectionStatus');
+  const offlineBanner      = document.getElementById('offlineBanner');
+  const queuedCountEl      = document.getElementById('queuedCount');
+
+  // --- Connection Manager Class ---
+  class ConnectionManager {
+    constructor(serverUrl, onMessageCallback) {
+      this.serverUrl = serverUrl;
+      this.ws = null;
+      this.onMessage = onMessageCallback;
+      this.isConnected = false;
+      this.isConnecting = false;
+      this.reconnectAttempts = 0;
+      this.maxReconnectAttempts = 30;
+      this.reconnectDelay = 1000;
+      this.username = null;
+      this.password = null;
+      
+      document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
+      window.addEventListener('online', this.handleOnlineStatus.bind(this));
+      window.addEventListener('offline', this.handleOfflineStatus.bind(this));
+      
+      this.pingInterval = null;
+      this.missedPings = 0;
+      this.maxMissedPings = 3;
+    }
+    
+    setCredentials(username, password) {
+      this.username = username;
+      this.password = password;
+    }
+    
+    updateConnectionStatus(status) {
+      connectionStatusEl.className = `connection-status ${status}`;
+      connectionStatusEl.querySelector('.status-indicator').className = `status-indicator ${status}`;
+      
+      let statusText = 'Unknown';
+      switch(status) {
+        case 'connected': statusText = 'Connected'; break;
+        case 'connecting': statusText = 'Connecting...'; break;
+        case 'disconnected': statusText = 'Disconnected'; break;
+      }
+      
+      connectionStatusEl.querySelector('span').textContent = statusText;
+    }
+    
+    connect() {
+      if (this.isConnected || this.isConnecting) return;
+      
+      this.isConnecting = true;
+      this.updateConnectionStatus('connecting');
+      
+      console.log('Attempting WebSocket connection...');
+      
+      try {
+        if (this.ws) {
+          this.ws.onclose = null;
+          this.ws.close();
+        }
+        this.ws = new WebSocket(this.serverUrl);
+        this.ws.onopen = this.handleOpen.bind(this);
+        this.ws.onmessage = this.handleMessage.bind(this);
+        this.ws.onclose = this.handleClose.bind(this);
+        this.ws.onerror = this.handleError.bind(this);
+      } catch (err) {
+        console.error('WebSocket connection error:', err);
+        this.handleConnectionFailure();
+      }
+    }
+    
+    async handleOpen() {
+      console.log('WebSocket connection established');
+      this.isConnected = true;
+      this.isConnecting = false;
+      this.reconnectAttempts = 0;
+      this.updateConnectionStatus('connected');
+      
+      offlineBanner.classList.remove('visible');
+      
+      if (this.username && this.password) {
+        const publicKey = await window.encryptionManager.exportPublicKey();
+        this.send({ 
+          type: 'auth', 
+          username: this.username, 
+          password: this.password,
+          publicKey: publicKey
+        });
+      }
+      
+      this.startHeartbeat();
+      this.processMessageQueue();
+    }
+    
+    startHeartbeat() {
+      if (this.pingInterval) clearInterval(this.pingInterval);
+      
+      this.missedPings = 0;
+      this.pingInterval = setInterval(() => {
+        if (this.isConnected && this.ws.readyState === WebSocket.OPEN) {
+          this.send({ type: 'ping', time: Date.now() });
+          this.missedPings++;
+          if (this.missedPings >= this.maxMissedPings) {
+            console.log('Too many missed pings, reconnecting...');
+            this.reconnect();
+          }
+        } else {
+          clearInterval(this.pingInterval);
+        }
+      }, 30000);
+    }
+    
+    handleMessage(event) {
+      this.missedPings = 0;
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'pong') {
+          console.log('Received pong from server');
+          return;
+        }
+        if (this.onMessage) this.onMessage(data);
+      } catch (err) {
+        console.error('Error processing WebSocket message:', err);
+      }
+    }
+    
+    handleClose(event) {
+      console.log(`WebSocket connection closed: ${event.code} ${event.reason}`);
+      this.isConnected = false;
+      this.isConnecting = false;
+      this.updateConnectionStatus('disconnected');
+      
+      if (messageQueue.length > 0) {
+        offlineBanner.classList.add('visible');
+        queuedCountEl.textContent = messageQueue.length;
+      }
+      
+      if (this.pingInterval) {
+        clearInterval(this.pingInterval);
+        this.pingInterval = null;
+      }
+      
+      if (!event.wasClean) this.handleConnectionFailure();
+    }
+    
+    handleError(error) {
+      console.error('WebSocket error:', error);
+      this.handleConnectionFailure();
+    }
+    
+ pail    handleConnectionFailure() {
+      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        console.log('Maximum reconnection attempts reached. Giving up.');
+        this.updateConnectionStatus('disconnected');
+        displaySystemMessage('Could not reconnect to server. Please refresh the page to try again.');
+        return;
+      }
+      
+      const baseDelay = Math.min(30000, this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts));
+      const jitter = Math.random() * 0.5 * baseDelay;
+      const delay = Math.floor(baseDelay + jitter);
+      
+      console.log(`Reconnecting attempt ${this.reconnectAttempts + 1} in ${delay}ms`);
+      this.reconnectAttempts++;
+      
+      setTimeout(() => this.reconnect(), delay);
+    }
+    
+    reconnect() {
+      this.isConnected = false;
+      this.isConnecting = false;
+      this.connect();
+    }
+    
+    handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        console.log('Page visible again, checking connection');
+        this.checkServerHealth().then(isHealthy => {
+          if (isHealthy && !this.isConnected && !this.isConnecting) {
+            console.log('Server is healthy, reconnecting');
+            this.connect();
+          }
+        });
+      }
+    }
+    
+    handleOnlineStatus() {
+      console.log('Browser reports online status');
+      this.checkServerHealth().then(isHealthy => {
+        if (isHealthy && !this.isConnected && !this.isConnecting) {
+          console.log('Network is online and server is healthy, reconnecting');
+          this.connect();
+        }
+      });
+    }
+    
+    handleOfflineStatus() {
+      console.log('Browser reports offline status');
+      this.updateConnectionStatus('disconnected');
+      if (messageQueue.length > 0) {
+        offlineBanner.classList.add('visible');
+        queuedCountEl.textContent = messageQueue.length;
+      }
+    }
+    
+    async checkServerHealth() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/health`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Server health check:', data);
+          return data.status === 'ok';
+        }
+        return false;
+      } catch (err) {
+        console.error('Health check failed:', err);
+        return false;
+      }
+    }
+    
+    send(data) {
+      if (!this.isConnected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        console.log('Cannot send message, connection not open');
+        return false;
+      }
+      try {
+        this.ws.send(JSON.stringify(data));
+        return true;
+      } catch (err) {
+        console.error('Error sending message:', err);
+        return false;
+      }
+    }
+    
+    disconnect() {
+      if (this.ws) {
+        this.ws.onclose = null;
+        this.ws.onerror = null;
+        if (this.pingInterval) {
+          clearInterval(this.pingInterval);
+          this.pingInterval = null;
+        }
+        if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+          this.ws.close(1000, 'User initiated disconnect');
+        }
+        this.ws = null;
+        this.isConnected = false;
+        this.isConnecting = false;
+        this.updateConnectionStatus('disconnected');
+      }
+    }
+    
+    processMessageQueue() {
+      if (messageQueue.length === 0) return;
+      console.log(`Sending ${messageQueue.length} queued messages`);
+      displaySystemMessage(`Sending ${messageQueue.length} queued message(s)...`);
+      while (messageQueue.length > 0) {
+        const message = messageQueue.shift();
+        const sent = this.send(message.data);
+        if (!sent) {
+          messageQueue.unshift(message);
+          break;
+        } else {
+          queuedCountEl.textContent = messageQueue.length;
+          if (messageQueue.length === 0) offlineBanner.classList.remove('visible');
+        }
+      }
+      if (messageQueue.length > 0) {
+        displaySystemMessage(`${messageQueue.length} message(s) still queued for sending.`);
+      } else {
+        displaySystemMessage('All queued messages sent successfully.');
+      }
+    }
+  }
+
+  // --- Initialize Connection Manager ---
+  const connectionManager = new ConnectionManager(
+    'wss://securechat-server-1s4i.onrender.com',
+    handleIncomingMessage
+  );
+
+  // --- CSRF Token Handling ---
+  async function fetchCsrfToken() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/csrf-token`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
+      const data = await response.json();
+      csrfToken = data.csrfToken;
+      console.log('CSRF token acquired:', csrfToken);
+    } catch (err) {
+      console.error('Failed to get CSRF token:', err);
+      csrfToken = null;
+      displaySystemMessage('Failed to initialize CSRF token. Some features may not work.');
+    }
+  }
+
+  // --- File Upload Handling ---
+  async function handleFileUpload(files) {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    displaySystemMessage(`Uploading ${file.name}...`);
+    try {
+      // Ensure CSRF token
+      if (!csrfToken) {
+        console.error('CSRF token missing, fetching new token...');
+        await fetchCsrfToken();
+      }
+      if (!csrfToken) throw new Error('CSRF token not available');
+      const formData = new FormData();
+      let isEncrypted = false;
+      let encryptedKey = null;
+      let iv = null;
+      if (encryptionToggle.checked && currentChannel !== 'all') {
+        const result = await window.encryptionManager.encryptFile(file, currentChannel);
+        formData.append('file', result.file);
+        if (result.encryptedKey && result.iv) {
+          isEncrypted = true;
+          encryptedKey = result.encryptedKey;
+          iv = result.iv;
+          formData.append('encrypted', 'true');
+          formData.append('encryptedKey', encryptedKey);
+          formData.append('iv', iv);
+        }
+      } else {
+        formData.append('file', file);
+      }
+      const response = await fetch(`${API_BASE_URL}/upload`, {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': csrfToken },
+        body: formData
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Upload failed:', response.status, text);
+        throw new Error(`Upload failed: ${response.status} - ${text}`);
+      }
+      const contentType = response.headers.get('Content-Type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', contentType, text);
+        throw new Error(`Expected JSON, got ${contentType}: ${text}`);
+      }
+      const data = await response.json();
+      if (data.error) {
+        displaySystemMessage(`Upload failed: ${data.error}`, 'error');
+        throw new Error(data.error);
+      }
+      displaySystemMessage(`${file.name} uploaded successfully`, 'success');
+      const message = {
+        type: 'file',
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        username: currentUser,
+        recipient: currentChannel,
+        time: new Date().toISOString(),
+        fileUrl: data.url,
+        filename: data.filename,
+        fileType: data.type,
+        encrypted: isEncrypted,
+        encryptedKey,
+        iv
+      };
+      const sent = connectionManager.send(message);
+      if (!sent && messageQueue.length === 0) {
+        displaySystemMessage('You are offline. File message queued for sending.');
+      }
+      if (!sent) {
+        messageQueue.push({ data: message });
+        offlineBanner.classList.add('visible');
+        queuedCountEl.textContent = messageQueue.length;
+      } else {
+        displayFileMessage(message);
+      }
+    } catch (err) {
+      console.error('File upload error:', err);
+      displaySystemMessage(`Failed to upload ${file.name}: ${err.message}`, 'error');
+    }
+  }
+
+  function openFileSelector() {
+    document.getElementById('fileInput').click();
+  }
+
+  // --- Authentication Functions ---
+  async function register() {
+    const username = document.getElementById('regUsername').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const confirmPassword = document.getElementById('regConfirmPassword').value;
+    const displayName = document.getElementById('regDisplayName').value.trim() || username;
+
+    if (!username || !password) {
+      displaySystemMessage('Username and password are required.', 'error');
+      return;
+    }
+    if (password !== confirmPassword) {
+      displaySystemMessage('Passwords do not match.', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({ username, password, displayName })
+      });
+      const data = await response.json();
+      if (data.error) {
+        displaySystemMessage(`Registration failed: ${data.error}`, 'error');
+        return;
+      }
+      displaySystemMessage('Registration successful. Please log in.', 'success');
+      document.getElementById('regUsername').value = '';
+      document.getElementById('regPassword').value = '';
+      document.getElementById('regConfirmPassword').value = '';
+      document.getElementById('regDisplayName').value = '';
+    } catch (err) {
+      console.error('Registration error:', err);
+      displaySystemMessage('Registration failed: Network error.', 'error');
+    }
+  }
+
+  async function login() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!username || !password) {
+      displaySystemMessage('Username and password are required.', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await response.json();
+      if (data.error) {
+        displaySystemMessage(`Login failed: ${data.error}`, 'error');
+        return;
+      }
+      currentUser = username;
+      connectionManager.setCredentials(username, password);
+      connectionManager.connect();
+      document.getElementById('authBox').style.display = 'none';
+      document.getElementById('mainInterface').style.display = 'flex';
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+      displaySystemMessage('Logged in successfully.', 'success');
+    } catch (err) {
+      console.error('Login error:', err);
+      displaySystemMessage('Login failed: Network error.', 'error');
+    }
+  }
+
+  // --- Message Handling ---
+  async function sendMessage() {
+    const content = messageInput.value.trim();
+    if (!content) return;
+
+    let message = {
+      type: 'message',
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      username: currentUser,
+      recipient: currentChannel,
+      time: new Date().toISOString(),
+      content
+    };
+
+    if (encryptionToggle.checked && currentChannel !== 'all') {
+      try {
+        const encrypted = await window.encryptionManager.encryptMessage(content, currentChannel);
+        message.content = encrypted.ciphertext;
+        message.encrypted = true;
+        message.encryptedKey = encrypted.encryptedKey;
+        message.iv = encrypted.iv;
+      } catch (err) {
+        console.error('Encryption error:', err);
+        displaySystemMessage('Failed to encrypt message.', 'error');
+        return;
+      }
+    }
+
+    const sent = connectionManager.send(message);
+    if (!sent) {
+      messageQueue.push({ data: message });
+      offlineBanner.classList.add('visible');
+      queuedCountEl.textContent = messageQueue.length;
+      displaySystemMessage('You are offline. Message queued for sending.');
+    } else {
+      if (!message.encrypted) {
+        displayMessage(message);
+      }
+      messageInput.value = '';
+      selectedFormat = null;
+      updateFormattingButtons();
+    }
+  }
+
+  async function handleIncomingMessage(data) {
+    switch (data.type) {
+      case 'message':
+      case 'file':
+        if (data.encrypted && data.recipient !== 'all') {
+          try {
+            const decrypted = await window.encryptionManager.decryptMessage({
+              ciphertext: data.content || '',
+              encryptedKey: data.encryptedKey,
+              iv: data.iv
+            }, data.username);
+            data.content = decrypted;
+          } catch (err) {
+            console.error('Decryption error:', err);
+            data.content = '[Failed to decrypt message]';
+          }
+        }
+        if (data.type === 'message') {
+          displayMessage(data);
+        } else {
+          displayFileMessage(data);
+        }
+        sendReadReceipt(data);
+        break;
+      case 'typing':
+        handleTypingIndicator(data);
+        break;
+      case 'read':
+        updateReadStatus(data);
+        break;
+      case 'publicKey':
+        publicKeys[data.username] = data.key;
+        break;
+      case 'profile':
+        userProfiles[data.username] = { displayName: data.displayName, status: data.status };
+        updateUserList();
+        break;
+      case 'userList':
+        data.users.forEach(user => {
+          userProfiles[user.username] = { displayName: user.displayName, status: user.status };
+        });
+        updateUserList();
+        break;
+      case 'error':
+        displaySystemMessage(`Server error: ${data.message}`, 'error');
+        break;
+    }
+  }
+
+  function displayMessage(message) {
+    const isOwn = message.username === currentUser;
+    const div = document.createElement('div');
+    div.className = `message ${isOwn ? 'own' : 'other'}`;
+    div.innerHTML = `
+      <div>${escapeHtml(message.content)}</div>
+      <div class="timestamp">${formatTime(message.time)}</div>
+      ${isOwn ? '<div class="read-receipt"></div>' : ''}
+    `;
+    messagesContainer.appendChild(div);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  function displayFileMessage(message) {
+    const isOwn = message.username === currentUser;
+    const div = document.createElement('div');
+    div.className = `message ${isOwn ? 'own' : 'other'} file-message`;
+    const iconClass = message.fileType.startsWith('image/') ? 'fas fa-image' :
+                     message.fileType.startsWith('video/') ? 'fas fa-video' :
+                     message.fileType.startsWith('audio/') ? 'fas fa-music' : 'fas fa-file';
+    let preview = '';
+    if (message.fileType.startsWith('image/')) {
+      preview = `<div class="file-preview"><img src="${message.fileUrl}" alt="preview"/></div>`;
+    }
+    div.innerHTML = `
+      <div class="file-icon"><i class="${iconClass}"></i></div>
+      <div class="file-info">
+        <a href="${message.fileUrl}" target="_blank" class="file-name">${escapeHtml(message.filename)}</a>
+        ${preview}
+      </div>
+      <div class="timestamp">${formatTime(message.time)}</div>
+      ${isOwn ? '<div class="read-receipt"></div>' : ''}
+    `;
+    messagesContainer.appendChild(div);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  function displaySystemMessage(message, type = 'info') {
+    const div = document.createElement('div');
+    div.className = `message system upload-status ${type}`;
+    div.textContent = message;
+    messagesContainer.appendChild(div);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  function handleTypingIndicator(data) {
+    if (data.username !== currentUser && data.recipient === currentChannel) {
+      typingIndicator.textContent = `${userProfiles[data.username]?.displayName || data.username} is typing...`;
+      typingIndicator.style.display = 'block';
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        typingIndicator.style.display = 'none';
+      }, 3000);
+    }
+  }
+
+  function sendReadReceipt(message) {
+    if (message.username !== currentUser && message.recipient !== 'all') {
+      connectionManager.send({
+        type: 'read',
+        messageId: message.id,
+        username: currentUser,
+        recipient: message.username
+      });
+    }
+  }
+
+  function updateReadStatus(data) {
+    if (data.username === currentChannel) {
+      messageReadStatus[data.messageId] = true;
+      const receipt = document.querySelector(`[data-message-id="${data.messageId}"] .read-receipt`);
+      if (receipt) receipt.textContent = 'Read';
+    }
+  }
+
+  // --- User Interface ---
+  function updateUserList() {
+    userListElement.innerHTML = `
+      <div class="user-item ${currentChannel === 'all' ? 'active' : ''}" data-username="all">
+        <div class="user-avatar">All</div>
+        <div class="user-info">
+          <div class="user-name">Everyone</div>
+          <div class="user-status">Public Channel</div>
+        </div>
+      </div>
+    `;
+    Object.keys(userProfiles).forEach(username => {
+      if (username !== currentUser) {
+        const profile = userProfiles[username];
+        const div = document.createElement('div');
+        div.className = `user-item ${currentChannel === username ? 'active' : ''}`;
+        div.dataset.username = username;
+        div.innerHTML = `
+          <div class="user-avatar">${profile.displayName[0].toUpperCase()}</div>
+          <div class="user-info">
+            <div class="user-name">${escapeHtml(profile.displayName)}</div>
+            <div class="user-status ${profile.status}">${profile.status}</div>
+          </div>
+        `;
+        userListElement.appendChild(div);
+      }
+    });
+    userListElement.querySelectorAll('.user-item').forEach(item => {
+      item.addEventListener('click', () => switchChannel(item.dataset.username));
+    });
+  }
+
+  function switchChannel(username) {
+    currentChannel = username;
+    currentChannelElem.textContent = username === 'all' ? 'Public Channel' : userProfiles[username]?.displayName || username;
+    userListElement.querySelectorAll('.user-item').forEach(item => {
+      item.classList.toggle('active', item.dataset.username === username);
+    });
+    messagesContainer.innerHTML = '';
+    // Fetch message history if needed
+  }
+
+  function openProfileModal() {
+    const profile = userProfiles[currentUser] || { displayName: currentUser, status: 'online' };
+    document.getElementById('displayName').value = profile.displayName;
+    document.getElementById('statusSelect').value = profile.status;
+    profileModal.style.display = 'flex';
+  }
+
+  function closeProfileModal() {
+    profileModal.style.display = 'none';
+  }
+
+  async function updateProfile() {
+    const displayName = document.getElementById('displayName').value.trim() || currentUser;
+    const status = document.getElementById('statusSelect').value;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({ username: currentUser, displayName, status })
+      });
+      const data = await response.json();
+      if (data.error) {
+        displaySystemMessage(`Profile update failed: ${data.error}`, 'error');
+        return;
+      }
+      userProfiles[currentUser] = { displayName, status };
+      updateUserList();
+      closeProfileModal();
+      displaySystemMessage('Profile updated successfully.', 'success');
+      connectionManager.send({
+        type: 'profile',
+        username: currentUser,
+        displayName,
+        status
+      });
+    } catch (err) {
+      console.error('Profile update error:', err);
+      displaySystemMessage('Profile update failed: Network error.', 'error');
+    }
+  }
+
+  // --- Emoji Picker ---
+  function initEmojiPicker() {
+    const categories = {
+      'Smileys': ['😀', '😊', '😂', '😍', '😢', '😎', '😡'],
+      'Objects': ['📱', '💻', '📚', '✈️', '🚗', '⚽', '🎸'],
+      'Symbols': ['❤️', '⭐', '🔥', '💡', '✅', '❌', '⚠️']
+    };
+    Object.keys(categories).forEach(category => {
+      const div = document.createElement('div');
+      div.className = 'emoji-category';
+      div.innerHTML = `<div class="emoji-category-name">${category}</div>`;
+      const grid = document.createElement('div');
+      grid.className = 'emoji-grid';
+      categories[category].forEach(emoji => {
+        const item = document.createElement('span');
+        item.className = 'emoji-item';
+        item.textContent = emoji;
+        item.addEventListener('click', () => {
+          messageInput.value += emoji;
+          messageInput.focus();
+          emojiPicker.style.display = 'none';
+        });
+        grid.appendChild(item);
+      });
+      div.appendChild(grid);
+      emojiPicker.appendChild(div);
+    });
+  }
+
+  function toggleEmojiPicker() {
+    emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'block' : 'none';
+  }
+
+  // --- Formatting Toolbar ---
+  function setupFormattingToolbar() {
+    document.querySelectorAll('.format-button').forEach(button => {
+      button.addEventListener('click', () => {
+        const format = button.dataset.format;
+        selectedFormat = selectedFormat === format ? null : format;
+        updateFormattingButtons();
+        applyFormat(format);
+      });
+    });
+  }
+
+  function updateFormattingButtons() {
+    document.querySelectorAll('.format-button').forEach(button => {
+      button.classList.toggle('active', button.dataset.format === selectedFormat);
+    });
+  }
+
+  function applyFormat(format) {
+    const start = messageInput.selectionStart;
+    const end = messageInput.selectionEnd;
+    const selectedText = messageInput.value.substring(start, end);
+    if (!selectedText) return;
+
+    let formattedText = selectedText;
+    switch (format) {
+      case 'bold':
+        formattedText = `**${selectedText}**`;
+        break;
+      case 'italic':
+        formattedText = `*${selectedText}*`;
+        break;
+      case 'underline':
+        formattedText = `<u>${selectedText}</u>`;
+        break;
+      case 'strikethrough':
+        formattedText = `~~${selectedText}~~`;
+        break;
+      case 'code':
+        formattedText = `\`${selectedText}\``;
+        break;
+      case 'link':
+        const url = prompt('Enter URL:');
+        if (url) formattedText = `[${selectedText}](${url})`;
+        break;
+    }
+
+    messageInput.value = messageInput.value.substring(0, start) + formattedText + messageInput.value.substring(end);
+    messageInput.focus();
+  }
+
+  // --- Utilities ---
+  function escapeHtml(text) {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function formatTime(isoString) {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // --- Event Listeners ---
+  messageInput.addEventListener('input', () => {
+    if (!isTyping) {
+      isTyping = true;
+      connectionManager.send({
+        type: 'typing',
+        username: currentUser,
+        recipient: currentChannel
+      });
+    }
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+      isTyping = false;
+    }, 2000);
+  });
+
+  messageInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // --- Initialization ---
+  window.onload = async () => {
+    await fetchCsrfToken();
+    if (!csrfToken) {
+      console.error('Initial CSRF token fetch failed');
+      displaySystemMessage('Failed to initialize app: CSRF token unavailable');
+    }
+    initEmojiPicker();
+    setupFormattingToolbar();
+    document.getElementById('username').focus();
+    connectionManager.updateConnectionStatus('disconnected');
+    window.addEventListener('beforeunload', () => {
+      connectionManager.disconnect();
+    });
+  };
+</script>
+</body>
+</html>

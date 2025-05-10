@@ -1146,7 +1146,8 @@ button:hover { background:#357abd; }
   async function updateProfile(){
     const d=document.getElementById('displayName').value;
     const s=document.getElementById('statusSelect').value;
-    if(!d) return alert("Name can't be empty");
+    if (!d) return alert("Name can't be empty");
+
     try{
       const res=await fetch(`${API_BASE_URL}/update-profile`,{
         method:'POST',

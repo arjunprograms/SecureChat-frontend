@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         /* --- Reset & Layout --- */
+
 * { margin:0; padding:0; box-sizing:border-box }
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -600,7 +601,7 @@ button:hover { background:#357abd; }
   }
 
   // --- Globals & DOM Refs ---
-  const API_BASE_URL = 'https://securechat-server-1s4i.onrender.com';
+  const API_BASE_URL = 'http://localhost:3001';
   let ws, currentUser, currentChannel='all', typingTimeout, encryptionManager, isTyping=false;
   let publicKeys={}, userProfiles={}, messageReadStatus={};
   let selectedFormat=null;
@@ -622,7 +623,33 @@ button:hover { background:#357abd; }
     // Add visibility change handler
     document.addEventListener('visibilitychange', handleVisibilityChange);
   };
-  
+  // Add this check near the top of your frontend script
+console.log("API_BASE_URL is set to:", API_BASE_URL);
+
+// For local development, make sure it points to localhost
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  // Check if we need to update API_BASE_URL for local development
+  if (API_BASE_URL !== 'http://localhost:3001') {
+    console.warn("Warning: API_BASE_URL might be incorrect for local development");
+    console.warn("Current value:", API_BASE_URL);
+    console.warn("Expected value for local development: http://localhost:3001");
+  }
+}
+
+// Test if the server is reachable
+async function testServerConnection() {
+  try {
+    console.log("Testing connection to server...");
+    const response = await fetch(`${API_BASE_URL}/cors-test`);
+    const data = await response.json();
+    console.log("Server connection test successful:", data);
+  } catch (err) {
+    console.error("Server connection test failed:", err);
+  }
+}
+
+// Run the test when the page loads
+window.addEventListener('load', testServerConnection);
   document.getElementById('username').focus();
 
   // --- AUTH (register/login) ---
@@ -1035,105 +1062,6 @@ button:hover { background:#357abd; }
   // --- Files ---
   function openFileSelector(){ document.getElementById('fileInput').click() }
   
-  async function handleFileUpload(files) {
-    if (!files || !files.length) return;
-    
-    const file = files[0];
-    
-    // Basic validation
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-    if (file.size > MAX_FILE_SIZE) {
-      alert(`File too large. Maximum size is 5MB.`);
-      document.getElementById('fileInput').value = '';
-      return;
-    }
-    
-    // Create a visual indicator for the upload
-    const uploadIndicator = document.createElement('div');
-    uploadIndicator.className = 'message system';
-    uploadIndicator.textContent = `Uploading ${file.name}...`;
-    messagesContainer.appendChild(uploadIndicator);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    
-    // Create FormData
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    try {
-      // Log request details for debugging
-      console.log("Sending file upload request to:", `${API_BASE_URL}/upload`);
-      console.log("File details:", {
-        name: file.name,
-        type: file.type,
-        size: file.size
-      });
-      
-      // Make the request with explicit headers and timeout
-      const res = await fetch(`${API_BASE_URL}/upload`, {
-        method: 'POST',
-        body: formData,
-        // Don't set Content-Type header - browser will set it with boundary
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-      
-      // Get response content type for debugging
-      const contentType = res.headers.get('content-type');
-      console.log("Response content type:", contentType);
-      
-      // Check if the response is not JSON
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await res.text();
-        console.error("Non-JSON response:", text.substring(0, 500)); // Log first 500 chars
-        throw new Error("Server returned non-JSON response");
-      }
-      
-      // Parse JSON
-      const data = await res.json();
-      
-      // Check for success
-      if (!res.ok) {
-        throw new Error(data.error || `Upload failed with status ${res.status}`);
-      }
-      
-      // Update progress indicator
-      uploadIndicator.textContent = `File uploaded successfully!`;
-      uploadIndicator.style.color = '#28a745'; // green
-      
-      // Send file message to WebSocket
-      const recipient = (currentChannel === 'all') ? 'all' : currentChannel;
-      ws.send(JSON.stringify({
-        type: 'file',
-        fileUrl: data.url,
-        filename: file.name, // Use original filename for display
-        fileType: file.type,
-        recipient: recipient,
-        encrypted: encryptionToggle.checked && recipient !== 'all',
-        messageId: Date.now().toString()
-      }));
-      
-      // Remove indicator after 2 seconds
-      setTimeout(() => {
-        uploadIndicator.remove();
-      }, 2000);
-      
-    } catch (err) {
-      console.error('File upload error:', err);
-      
-      // Show error message
-      uploadIndicator.textContent = `Upload failed: ${err.message}`;
-      uploadIndicator.style.color = '#dc3545'; // red
-      
-      // Remove indicator after 5 seconds
-      setTimeout(() => {
-        uploadIndicator.remove();
-      }, 5000);
-    }
-    
-    // Reset the input regardless of outcome
-    document.getElementById('fileInput').value = '';
-  }
 
   // --- Profile Modal ---
   function openProfileModal(){
@@ -1146,7 +1074,8 @@ button:hover { background:#357abd; }
   async function updateProfile(){
     const d=document.getElementById('displayName').value;
     const s=document.getElementById('statusSelect').value;
-    if(!d) return alert("Name can't be empty");
+    if (!d) return alert("Name can't be empty");
+
     try{
       const res=await fetch(`${API_BASE_URL}/update-profile`,{
         method:'POST',
@@ -1233,6 +1162,150 @@ button:hover { background:#357abd; }
       messagesContainer.scrollTop=messagesContainer.scrollHeight;
     }catch(e){console.error(e)}
   }
+
+  // Add this function to your frontend code
+async function testUploadEndpoint() {
+  console.log("Making test request to upload endpoint...");
+  
+  try {
+    // Make a simple POST request without any file
+    const response = await fetch(`${API_BASE_URL}/upload`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
+    console.log("Test response status:", response.status);
+    console.log("Test response headers:", 
+      Array.from(response.headers.entries())
+        .map(([k,v]) => `${k}: ${v}`)
+        .join(', ')
+    );
+    
+    // Try to get the response as text
+    const responseText = await response.text();
+    console.log("Test response text:", responseText);
+    
+    // Try to parse as JSON
+    try {
+      const data = JSON.parse(responseText);
+      console.log("Successfully parsed JSON:", data);
+      alert("Test succeeded! Server returned valid JSON.");
+    } catch (parseErr) {
+      console.error("JSON parse error:", parseErr);
+      alert("Test failed! Server returned invalid JSON: " + responseText.substring(0, 100));
+    }
+  } catch (err) {
+    console.error("Test request failed:", err);
+    alert("Test request failed: " + err.message);
+  }
+}
+
+// Replace your handleFileUpload function with this updated version
+async function handleFileUpload(files) {
+  // First run a test to see if the server is responding with valid JSON
+  await testUploadEndpoint();
+  
+  if (!files || !files.length) return;
+  
+  const file = files[0];
+  console.log("Starting file upload for:", file.name);
+  
+  // Create a visual indicator for the upload
+  const uploadIndicator = document.createElement('div');
+  uploadIndicator.className = 'message system';
+  uploadIndicator.textContent = `Uploading ${file.name}...`;
+  messagesContainer.appendChild(uploadIndicator);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  
+  // Create FormData
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  try {
+    console.log("Sending upload request to:", `${API_BASE_URL}/upload`);
+    
+    // Make the request
+    const response = await fetch(`${API_BASE_URL}/upload`, {
+      method: 'POST',
+      body: formData
+      // No headers set when using FormData - browser handles this
+    });
+    
+    // Log response details
+    console.log("Response status:", response.status);
+    console.log("Response headers:", 
+      Array.from(response.headers.entries())
+        .map(([k,v]) => `${k}: ${v}`)
+        .join(', ')
+    );
+    
+    // Get response text
+    const responseText = await response.text();
+    console.log("Response text (first 100 chars):", responseText.substring(0, 100));
+    
+    // Parse as JSON
+    let data;
+    try {
+      data = JSON.parse(responseText);
+      console.log("Parsed data:", data);
+    } catch (parseErr) {
+      console.error("Failed to parse response as JSON:", parseErr);
+      throw new Error("Server returned invalid JSON");
+    }
+    
+    // Check for error in the response
+    if (data && data.error) {
+      throw new Error(data.error);
+    }
+    
+    // Check for missing URL
+    if (!data || !data.url) {
+      throw new Error("No file URL in response");
+    }
+    
+    // Update success message
+    uploadIndicator.textContent = `File uploaded successfully!`;
+    uploadIndicator.style.color = '#28a745';
+    
+    // Send message via WebSocket
+    const recipient = (currentChannel === 'all') ? 'all' : currentChannel;
+    
+    const fileMessage = {
+      type: 'file',
+      fileUrl: data.url,
+      filename: data.filename || file.name,
+      fileType: data.type || file.type,
+      recipient: recipient,
+      encrypted: encryptionToggle.checked && recipient !== 'all',
+      messageId: Date.now().toString()
+    };
+    
+    console.log("Sending file message via WebSocket:", fileMessage);
+    ws.send(JSON.stringify(fileMessage));
+    
+    // Remove indicator after success
+    setTimeout(() => {
+      uploadIndicator.remove();
+    }, 2000);
+    
+  } catch (err) {
+    console.error('File upload error:', err);
+    
+    // Update error message
+    uploadIndicator.textContent = `Upload failed: ${err.message}`;
+    uploadIndicator.style.color = '#dc3545';
+    
+    // Keep error message longer
+    setTimeout(() => {
+      uploadIndicator.remove();
+    }, 5000);
+  }
+  
+  // Always reset the file input
+  document.getElementById('fileInput').value = '';
+}
   function refreshMessages(){
     document.querySelectorAll('.message:not(.system)').forEach(msg=>{
       const s=msg.dataset.sender, r=msg.dataset.recipient;
